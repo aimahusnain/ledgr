@@ -90,65 +90,35 @@ export default function SidebarPageTemplate({
         url: "#",
         icon: Bot,
         isActive: isPathInItems([
-          { url: "/dashboard/individuals" },
-          { url: "/dashboard/teams" },
-          { url: "/dashboard/departments" },
-          { url: "/dashboard/company" },
+          { url: "/orders" },
+          { url: "/payouts" },
         ]),
         items: [
           {
-            title: "Individuals",
-            url: "/dashboard/individuals",
-            isActive: pathname === "/dashboard/individuals",
+            title: "Orders",
+            url: "/orders",
+            isActive: pathname === "/orders",
           },
           {
-            title: "Teams",
-            url: "/dashboard/teams",
-            isActive: pathname === "/dashboard/teams",
-          },
-          {
-            title: "Departments",
-            url: "/dashboard/departments",
-            isActive: pathname === "/dashboard/departments",
-          },
-          {
-            title: "Company",
-            url: "/dashboard/company",
-            isActive: pathname === "/dashboard/company",
-          },
+            title: "Payouts",
+            url: "/payouts",
+            isActive: pathname === "/payouts",
+          }
         ],
       },
       {
-        title: "Data Entry",
+        title: "Configurations",
         url: "#",
         icon: SquareTerminal,
         isActive: isPathInItems([
-          { url: "/data-entry/activity-log" },
-          { url: "/data-entry/incoming-calls" },
-          { url: "/data-entry/outgoing-calls" },
-          { url: "/data-entry/inputs" },
+          { url: "/configurations" },
         ]),
         items: [
           {
-            title: "Activity Log (Table1)",
-            url: "/data-entry/activity-log",
-            isActive: pathname === "/data-entry/activity-log",
-          },
-          {
-            title: "Incoming Calls",
-            url: "/data-entry/incoming-calls",
-            isActive: pathname === "/data-entry/incoming-calls",
-          },
-          {
-            title: "Outgoing Calls",
-            url: "/data-entry/outgoing-calls",
-            isActive: pathname === "/data-entry/outgoing-calls",
-          },
-          {
-            title: "System Configuration",
-            url: "/data-entry/inputs",
-            isActive: pathname === "/data-entry/inputs",
-          },
+            title: "Configurations",
+            url: "/configurations",
+            isActive: pathname === "/configurations",
+          }
         ],
       },
     ],
@@ -166,8 +136,8 @@ export default function SidebarPageTemplate({
   const { theme, setTheme } = useTheme();
   const [user, setUser] = React.useState({
     id: 1,
-    username: "Perdyrkorn",
-    email: "perdyrkorn@gmail.com",
+    username: "Muhammad Husnain",
+    email: "aimahusnain@gmail.com",
     picture: "https://github.com/shadcn.png",
     createdAt: new Date(),
     updatedAt: new Date(),
