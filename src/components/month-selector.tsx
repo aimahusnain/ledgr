@@ -1,11 +1,22 @@
-"use client"
+"use client";
 
-import React from "react"
-import { Check, ChevronsUpDown } from "lucide-react"
-import { cn } from "@/lib/utils"
-import { Button } from "@/components/ui/button"
-import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command"
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
+import React from "react";
+import { Check, ChevronsUpDown } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 
 const months = [
   "January",
@@ -20,23 +31,27 @@ const months = [
   "October",
   "November",
   "December",
-]
+];
 
 interface MonthSelectorProps {
-  selectedMonths: string[]
-  onChange: (months: string[]) => void
-  disabled?: boolean
+  selectedMonths: string[];
+  onChange: (months: string[]) => void;
+  disabled?: boolean;
 }
 
-const MonthSelector: React.FC<MonthSelectorProps> = ({ selectedMonths, onChange, disabled }) => {
-  const [open, setOpen] = React.useState(false)
+const MonthSelector: React.FC<MonthSelectorProps> = ({
+  selectedMonths,
+  onChange,
+  disabled,
+}) => {
+  const [open, setOpen] = React.useState(false);
 
   const handleSelect = (month: string) => {
     const updatedMonths = selectedMonths.includes(month)
       ? selectedMonths.filter((m) => m !== month)
-      : [...selectedMonths, month]
-    onChange(updatedMonths)
-  }
+      : [...selectedMonths, month];
+    onChange(updatedMonths);
+  };
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -48,7 +63,9 @@ const MonthSelector: React.FC<MonthSelectorProps> = ({ selectedMonths, onChange,
           className="w-[200px] justify-between"
           disabled={disabled}
         >
-          {selectedMonths.length > 0 ? `${selectedMonths.length} selected` : "Select months..."}
+          {selectedMonths.length > 0
+            ? `${selectedMonths.length} selected`
+            : "Select months..."}
           <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
         </Button>
       </PopoverTrigger>
@@ -60,7 +77,14 @@ const MonthSelector: React.FC<MonthSelectorProps> = ({ selectedMonths, onChange,
             <CommandGroup>
               {months.map((month) => (
                 <CommandItem key={month} onSelect={() => handleSelect(month)}>
-                  <Check className={cn("mr-2 h-4 w-4", selectedMonths.includes(month) ? "opacity-100" : "opacity-0")} />
+                  <Check
+                    className={cn(
+                      "mr-2 h-4 w-4",
+                      selectedMonths.includes(month)
+                        ? "opacity-100"
+                        : "opacity-0"
+                    )}
+                  />
                   {month}
                 </CommandItem>
               ))}
@@ -69,8 +93,7 @@ const MonthSelector: React.FC<MonthSelectorProps> = ({ selectedMonths, onChange,
         </Command>
       </PopoverContent>
     </Popover>
-  )
-}
+  );
+};
 
-export default MonthSelector
-
+export default MonthSelector;

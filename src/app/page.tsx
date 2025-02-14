@@ -1,24 +1,8 @@
-import React from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import {
-  Bot,
-  SquareTerminal,
-  PieChart,
-  Users,
-  Building2,
-  Building,
-  Activity,
-  TableProperties,
-  PhoneIncoming,
-  PhoneOutgoing,
-  Settings,
-  ArrowUpRight,
-} from "lucide-react";
-import Link from "next/link";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { CalendarDateRangePicker } from "@/components/date-range-picker";
 import { Overview } from "@/components/overview";
 import { RecentOrders } from "@/components/recent-orders";
-import { CalendarDateRangePicker } from "@/components/date-range-picker";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 const DashboardPage = () => {
   return (
