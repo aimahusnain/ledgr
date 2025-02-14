@@ -1,27 +1,33 @@
-import { UpdateUserForm } from "@/components/update-user-form"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { UpdateUserForm } from "@/components/update-user-form";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 
-import { db } from "@/lib/db"
+import { db } from "@/lib/db";
 
 async function getUserById(id: string) {
   try {
     const user = await db.user.findUnique({
       where: { id },
-    })
-    return user
+    });
+    return user;
   } catch (error) {
-    console.error("Failed to fetch user:", error)
-    throw new Error("Failed to fetch user")
+    console.error("Failed to fetch user:", error);
+    throw new Error("Failed to fetch user");
   }
 }
 
 const AccountPage = async () => {
   // In a real application, you'd get the user ID from the session
-  const userId = "1"
-  const user = await getUserById(userId)
+  const userId = "67afa94b897cccd58fd63698";
+  const user = await getUserById(userId);
 
   if (!user) {
-    return <div>User not found</div>
+    return <div>User not found</div>;
   }
 
   return (
@@ -29,14 +35,18 @@ const AccountPage = async () => {
       <Card className="max-w-2xl mx-auto">
         <CardHeader>
           <CardTitle>Account Settings</CardTitle>
-          <CardDescription>Update your account information here.</CardDescription>
+          <CardDescription>
+            Update your account information here.
+          </CardDescription>
         </CardHeader>
         <CardContent>
-          <UpdateUserForm user={{ ...user, id: Number(user.id), picture: user.picture || '' }} />
+          <UpdateUserForm
+            user={{ ...user, id: Number(user.id), picture: user.picture || "" }}
+          />
         </CardContent>
       </Card>
     </div>
-  )
-}
+  );
+};
 
-export default AccountPage
+export default AccountPage;
