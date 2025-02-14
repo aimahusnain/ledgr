@@ -3,7 +3,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 
 import { db } from "@/lib/db"
 
-async function getUserById(id: number) {
+async function getUserById(id: string) {
   try {
     const user = await db.user.findUnique({
       where: { id },
@@ -17,7 +17,7 @@ async function getUserById(id: number) {
 
 export default async function AccountPage() {
   // In a real application, you'd get the user ID from the session
-  const userId = 1
+  const userId = "1"
   const user = await getUserById(userId)
 
   if (!user) {
@@ -32,7 +32,7 @@ export default async function AccountPage() {
           <CardDescription>Update your account information here.</CardDescription>
         </CardHeader>
         <CardContent>
-          <UpdateUserForm user={{ ...user, picture: user.picture || '' }} />
+          <UpdateUserForm user={{ ...user, id: Number(user.id), picture: user.picture || '' }} />
         </CardContent>
       </Card>
     </div>
