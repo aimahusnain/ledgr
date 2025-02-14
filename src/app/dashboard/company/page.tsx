@@ -68,21 +68,6 @@ type CompanyData = {
   avgTotalScore: number;
 };
 
-const months = [
-  "January",
-  "February",
-  "March",
-  "April",
-  "May",
-  "June",
-  "July",
-  "August",
-  "September",
-  "October",
-  "November",
-  "December",
-];
-
 interface SortableHeaderProps<TData> {
   column: Column<TData>;
   title: string;
@@ -113,7 +98,7 @@ const SortableHeader = <TData,>({
 const CompanyDashboard = () => {
   const [data, setData] = useState<CompanyData[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  // const [error, setError] = useState<string | null>(null);
   const [sorting, setSorting] = useState<SortingState>([]);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [selectedMonths, setSelectedMonths] = useState<string[]>([]);
@@ -341,14 +326,14 @@ const CompanyDashboard = () => {
       }
 
       setData(result.company);
-      setError(null);
+      // setError(null);
     } catch (err) {
       console.error(err);
-      setError(
-        err instanceof Error
-          ? err.message
-          : "An error occurred while fetching data"
-      );
+      // setError(
+      //   err instanceof Error
+      //     ? err.message
+      //     : "An error occurred while fetching data"
+      // );
     } finally {
       setIsRefreshing(false);
       setLoading(false);
