@@ -15,7 +15,7 @@ async function getUserById(id: string) {
   }
 }
 
-export default async function AccountPage() {
+const AccountPage = async () => {
   // In a real application, you'd get the user ID from the session
   const userId = "1"
   const user = await getUserById(userId)
@@ -39,3 +39,4 @@ export default async function AccountPage() {
   )
 }
 
+export default AccountPage
