@@ -46,11 +46,11 @@ model EbayOrder {
 }
 
 model Payout {
-  id           String        @id @default(auto()) @map("_id") @db.ObjectId
+  id           String   @id @default(auto()) @map("_id") @db.ObjectId
   date         DateTime
   amount       Float
   method       String
   description  String?
-  createdAt    DateTime      @default(now())
-  updatedAt    DateTime      @updatedAt
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 }

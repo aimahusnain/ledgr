@@ -6,7 +6,7 @@ import {
   Dialog,
   DialogContent,
   DialogHeader,
-  DialogTitle
+  DialogTitle,
 } from "@/components/ui/dialog";
 import {
   DropdownMenu,
@@ -27,7 +27,15 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { format } from "date-fns";
-import { Edit, Loader2, MoreHorizontal, Plus, RefreshCcw, Search, Trash2 } from "lucide-react";
+import {
+  Edit,
+  Loader2,
+  MoreHorizontal,
+  Plus,
+  RefreshCcw,
+  Search,
+  Trash2,
+} from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
@@ -63,7 +71,7 @@ const AmazonOrderTable = () => {
       const data = await response.json();
       setOrders(data);
     } catch (error) {
-      console.log(error)
+      console.log(error);
       toast.error("Failed to fetch orders");
     } finally {
       setLoading(false);
@@ -87,7 +95,9 @@ const AmazonOrderTable = () => {
         taxCollected: Number(formData.get("taxCollected")),
         giftCardAmount: Number(formData.get("giftCardAmount")),
         refundType: formData.get("refundType") || undefined,
-        refundAmount: formData.get("refundAmount") ? Number(formData.get("refundAmount")) : undefined,
+        refundAmount: formData.get("refundAmount")
+          ? Number(formData.get("refundAmount"))
+          : undefined,
       };
 
       const response = await fetch("/api/amazon-orders/add", {
@@ -102,10 +112,20 @@ const AmazonOrderTable = () => {
       setIsAddDialogOpen(false);
       fetchOrders();
     } catch (error) {
-      console.log(error)
+      console.log(error);
       toast.error("Failed to add order");
     }
   };
+
+  const handleAddDialogChange = (open: boolean) => {
+    setIsAddDialogOpen(open);
+    if (!open) {
+      // Reset form if needed
+      const form = document.querySelector('form');
+      if (form) form.reset();
+    }
+  };
+  
 
   const handleUpdateOrder = async (formData: FormData) => {
     if (!currentOrder) return;
@@ -122,14 +142,19 @@ const AmazonOrderTable = () => {
         taxCollected: Number(formData.get("taxCollected")),
         giftCardAmount: Number(formData.get("giftCardAmount")),
         refundType: formData.get("refundType") || undefined,
-        refundAmount: formData.get("refundAmount") ? Number(formData.get("refundAmount")) : undefined,
+        refundAmount: formData.get("refundAmount")
+          ? Number(formData.get("refundAmount"))
+          : undefined,
       };
 
-      const response = await fetch(`/api/amazon-orders/update/${currentOrder.id}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(orderData),
-      });
+      const response = await fetch(
+        `/api/amazon-orders/${currentOrder.id}`,
+        {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(orderData),
+        }
+      );
 
       if (!response.ok) throw new Error("Failed to update order");
 
@@ -137,7 +162,7 @@ const AmazonOrderTable = () => {
       setIsEditDialogOpen(false);
       fetchOrders();
     } catch (error) {
-      console.log(error)
+      console.log(error);
       toast.error("Failed to update order");
     }
   };
@@ -146,7 +171,7 @@ const AmazonOrderTable = () => {
     if (!confirm("Are you sure you want to delete this order?")) return;
 
     try {
-      const response = await fetch(`/api/amazon-orders/delete/${id}`, {
+      const response = await fetch(`/api/amazon-orders/${id}`, {
         method: "DELETE",
       });
 
@@ -155,12 +180,12 @@ const AmazonOrderTable = () => {
       toast.success("Order deleted successfully");
       fetchOrders();
     } catch (error) {
-      console.log(error)
+      console.log(error);
       toast.error("Failed to delete order");
     }
   };
 
-  const filteredOrders = orders.filter(order => 
+  const filteredOrders = orders.filter((order) =>
     order.orderNumber.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
@@ -180,7 +205,7 @@ const AmazonOrderTable = () => {
                   onChange={(e) => setSearchTerm(e.target.value)}
                 />
               </div>
-              <Button onClick={() => setIsAddDialogOpen(true)}>
+              <Button onClick={() => setIsAddDialogOpen(true)} className="dark:text-black">
                 <Plus className="mr-2 h-4 w-4" /> Add Order
               </Button>
               <Button variant="outline" onClick={fetchOrders}>
@@ -196,7 +221,7 @@ const AmazonOrderTable = () => {
               <Loader2 className="h-8 w-8 animate-spin" />
             </div>
           ) : (
-            <div className="rounded-md border">
+            <div className="rounded-md border w-screen container">
               <Table>
                 <TableHeader>
                   <TableRow>
@@ -204,6 +229,14 @@ const AmazonOrderTable = () => {
                     <TableHead>Date</TableHead>
                     <TableHead>Items</TableHead>
                     <TableHead>Payment Method</TableHead>
+                    <TableHead>Subtotal</TableHead>
+                    <TableHead>Additional Fee</TableHead>
+                    <TableHead>Shipping/Handling</TableHead>
+                    <TableHead>Tax Collected</TableHead>
+                    <TableHead>Gift Card</TableHead>
+                    <TableHead>Order Total</TableHead>
+                    <TableHead>Refund Amount</TableHead>
+                    <TableHead>Refund Type</TableHead>
                     <TableHead className="text-right">Total</TableHead>
                     <TableHead></TableHead>
                   </TableRow>
@@ -211,10 +244,22 @@ const AmazonOrderTable = () => {
                 <TableBody>
                   {filteredOrders.map((order) => (
                     <TableRow key={order.id}>
-                      <TableCell className="font-medium">{order.orderNumber}</TableCell>
-                      <TableCell>{format(new Date(order.orderDate), "dd MMM yyyy")}</TableCell>
+                      <TableCell className="font-medium">
+                        {order.orderNumber}
+                      </TableCell>
+                      <TableCell>
+                        {format(new Date(order.orderDate), "dd MMM yyyy")}
+                      </TableCell>
                       <TableCell>{order.numberOfItems}</TableCell>
                       <TableCell>{order.paymentMethod}</TableCell>
+                      <TableCell>{order.subtotal}</TableCell>
+                      <TableCell>{order.additionalFee}</TableCell>
+                      <TableCell>{order.shippingHandling}</TableCell>
+                      <TableCell>{order.taxCollected}</TableCell>
+                      <TableCell>{order.giftCardAmount}</TableCell>
+                      <TableCell>{order.orderTotal}</TableCell>
+                      <TableCell>{order.refundAmount}</TableCell>
+                      <TableCell>{order.refundType}</TableCell>
                       <TableCell className="text-right">
                         ${order.orderTotal.toFixed(2)}
                       </TableCell>
@@ -227,10 +272,12 @@ const AmazonOrderTable = () => {
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
                             <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                            <DropdownMenuItem onClick={() => {
-                              setCurrentOrder(order);
-                              setIsEditDialogOpen(true);
-                            }}>
+                            <DropdownMenuItem
+                              onClick={() => {
+                                setCurrentOrder(order);
+                                setIsEditDialogOpen(true);
+                              }}
+                            >
                               <Edit className="mr-2 h-4 w-4" /> Edit
                             </DropdownMenuItem>
                             <DropdownMenuSeparator />
@@ -253,152 +300,161 @@ const AmazonOrderTable = () => {
       </Card>
 
       {/* Add Order Dialog */}
-      <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-        <DialogContent className="sm:max-w-[600px]">
+      <Dialog open={isAddDialogOpen} onOpenChange={handleAddDialogChange}>
+
+<DialogContent className="sm:max-w-[600px]">
           <DialogHeader>
             <DialogTitle>Add New Order</DialogTitle>
           </DialogHeader>
-<form onSubmit={(e) => {
-  e.preventDefault();
-  handleAddOrder(new FormData(e.currentTarget));
-}}>
-  <div className="grid gap-6 py-4">
-    <div className="grid grid-cols-2 gap-4">
-      <div className="grid gap-2">
-        <Label htmlFor="orderNumber">Order Number</Label>
-        <Input
-          id="orderNumber"
-          name="orderNumber"
-          placeholder="Enter order number"
-          required
-        />
-      </div>
-      <div className="grid gap-2">
-        <Label htmlFor="orderDate">Order Date</Label>
-        <Input
-          id="orderDate"
-          name="orderDate"
-          type="date"
-          defaultValue={new Date().toISOString().split('T')[0]}
-          required
-        />
-      </div>
-    </div>
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              handleAddOrder(new FormData(e.currentTarget));
+            }}
+          >
+            <div className="grid gap-6 py-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="grid gap-2">
+                  <Label htmlFor="orderNumber">Order Number</Label>
+                  <Input
+                    id="orderNumber"
+                    name="orderNumber"
+                    placeholder="Enter order number"
+                    required
+                  />
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="orderDate">Order Date</Label>
+                  <Input
+                    id="orderDate"
+                    name="orderDate"
+                    type="date"
+                    defaultValue={new Date().toISOString().split("T")[0]}
+                    required
+                  />
+                </div>
+              </div>
 
-    <div className="grid grid-cols-2 gap-4">
-      <div className="grid gap-2">
-        <Label htmlFor="numberOfItems">Number of Items</Label>
-        <Input
-          id="numberOfItems"
-          name="numberOfItems"
-          type="number"
-          min="1"
-          defaultValue="1"
-          required
-        />
-      </div>
-      <div className="grid gap-2">
-        <Label htmlFor="paymentMethod">Payment Method</Label>
-        <Input
-          id="paymentMethod"
-          name="paymentMethod"
-          placeholder="Enter payment method"
-          required
-        />
-      </div>
-    </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="grid gap-2">
+                  <Label htmlFor="numberOfItems">Number of Items</Label>
+                  <Input
+                    id="numberOfItems"
+                    name="numberOfItems"
+                    type="number"
+                    min="1"
+                    defaultValue="1"
+                    required
+                  />
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="paymentMethod">Payment Method</Label>
+                  <Input
+                    id="paymentMethod"
+                    name="paymentMethod"
+                    placeholder="Enter payment method"
+                    required
+                  />
+                </div>
+              </div>
 
-    <div className="grid grid-cols-2 gap-4">
-      <div className="grid gap-2">
-        <Label htmlFor="subtotal">Subtotal ($)</Label>
-        <Input
-          id="subtotal"
-          name="subtotal"
-          type="number"
-          step="0.01"
-          min="0"
-          placeholder="0.00"
-          required
-        />
-      </div>
-      <div className="grid gap-2">
-        <Label htmlFor="additionalFee">Additional Fee ($)</Label>
-        <Input
-          id="additionalFee"
-          name="additionalFee"
-          type="number"
-          step="0.01"
-          min="0"
-          defaultValue="0"
-          required
-        />
-      </div>
-    </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="grid gap-2">
+                  <Label htmlFor="subtotal">Subtotal ($)</Label>
+                  <Input
+                    id="subtotal"
+                    name="subtotal"
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    placeholder="0.00"
+                    required
+                  />
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="additionalFee">Additional Fee ($)</Label>
+                  <Input
+                    id="additionalFee"
+                    name="additionalFee"
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    defaultValue="0"
+                    required
+                  />
+                </div>
+              </div>
 
-    <div className="grid grid-cols-2 gap-4">
-      <div className="grid gap-2">
-        <Label htmlFor="shippingHandling">Shipping & Handling ($)</Label>
-        <Input
-          id="shippingHandling"
-          name="shippingHandling"
-          type="number"
-          step="0.01"
-          min="0"
-          defaultValue="0"
-          required
-        />
-      </div>
-      <div className="grid gap-2">
-        <Label htmlFor="taxCollected">Tax Collected ($)</Label>
-        <Input
-          id="taxCollected"
-          name="taxCollected"
-          type="number"
-          step="0.01"
-          min="0"
-          defaultValue="0"
-          required
-        />
-      </div>
-    </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="grid gap-2">
+                  <Label htmlFor="shippingHandling">
+                    Shipping & Handling ($)
+                  </Label>
+                  <Input
+                    id="shippingHandling"
+                    name="shippingHandling"
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    defaultValue="0"
+                    required
+                  />
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="taxCollected">Tax Collected ($)</Label>
+                  <Input
+                    id="taxCollected"
+                    name="taxCollected"
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    defaultValue="0"
+                    required
+                  />
+                </div>
+              </div>
 
-    <div className="grid gap-2">
-      <Label htmlFor="giftCardAmount">Gift Card Amount ($)</Label>
-      <Input
-        id="giftCardAmount"
-        name="giftCardAmount"
-        type="number"
-        step="0.01"
-        min="0"
-        defaultValue="0"
-        required
-      />
-    </div>
+              <div className="grid gap-2">
+                <Label htmlFor="giftCardAmount">Gift Card Amount ($)</Label>
+                <Input
+                  id="giftCardAmount"
+                  name="giftCardAmount"
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  defaultValue="0"
+                  required
+                />
+              </div>
 
-    <div className="grid grid-cols-2 gap-4">
-      <div className="grid gap-2">
-        <Label htmlFor="refundType">Refund Type (Optional)</Label>
-        <Input
-          id="refundType"
-          name="refundType"
-          placeholder="Enter refund type"
-        />
-      </div>
-      <div className="grid gap-2">
-        <Label htmlFor="refundAmount">Refund Amount ($) (Optional)</Label>
-        <Input
-          id="refundAmount"
-          name="refundAmount"
-          type="number"
-          step="0.01"
-          min="0"
-          placeholder="0.00"
-        />
-      </div>
-    </div>
-  </div>
-  <Button type="submit" className="w-full">Add Order</Button>
-</form>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="grid gap-2">
+                  <Label htmlFor="refundType">Refund Type (Optional)</Label>
+                  <Input
+                    id="refundType"
+                    name="refundType"
+                    placeholder="Enter refund type"
+                  />
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="refundAmount">
+                    Refund Amount ($) (Optional)
+                  </Label>
+                  <Input
+                    id="refundAmount"
+                    name="refundAmount"
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    placeholder="0.00"
+                  />
+                </div>
+              </div>
+            </div>
+            <Button type="submit" className="w-full dark:text-black">
+              Add Order
+            </Button>
+          </form>
         </DialogContent>
       </Dialog>
 
@@ -409,148 +465,165 @@ const AmazonOrderTable = () => {
             <DialogTitle>Edit Order</DialogTitle>
           </DialogHeader>
           {currentOrder && (
-  <form onSubmit={(e) => {
-    e.preventDefault();
-    handleUpdateOrder(new FormData(e.currentTarget));
-  }}>
-    <div className="grid gap-6 py-4">
-      <div className="grid grid-cols-2 gap-4">
-        <div className="grid gap-2">
-          <Label htmlFor="edit-orderNumber">Order Number</Label>
-          <Input
-            id="edit-orderNumber"
-            name="orderNumber"
-            defaultValue={currentOrder.orderNumber}
-            required
-          />
-        </div>
-        <div className="grid gap-2">
-          <Label htmlFor="edit-orderDate">Order Date</Label>
-          <Input
-            id="edit-orderDate"
-            name="orderDate"
-            type="date"
-            defaultValue={format(new Date(currentOrder.orderDate), "yyyy-MM-dd")}
-            required
-          />
-        </div>
-      </div>
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                handleUpdateOrder(new FormData(e.currentTarget));
+              }}
+            >
+              <div className="grid gap-6 py-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="grid gap-2">
+                    <Label htmlFor="edit-orderNumber">Order Number</Label>
+                    <Input
+                      id="edit-orderNumber"
+                      name="orderNumber"
+                      defaultValue={currentOrder.orderNumber}
+                      required
+                    />
+                  </div>
+                  <div className="grid gap-2">
+                    <Label htmlFor="edit-orderDate">Order Date</Label>
+                    <Input
+                      id="edit-orderDate"
+                      name="orderDate"
+                      type="date"
+                      defaultValue={format(
+                        new Date(currentOrder.orderDate),
+                        "yyyy-MM-dd"
+                      )}
+                      required
+                    />
+                  </div>
+                </div>
 
-      <div className="grid grid-cols-2 gap-4">
-        <div className="grid gap-2">
-          <Label htmlFor="edit-numberOfItems">Number of Items</Label>
-          <Input
-            id="edit-numberOfItems"
-            name="numberOfItems"
-            type="number"
-            min="1"
-            defaultValue={currentOrder.numberOfItems}
-            required
-          />
-        </div>
-        <div className="grid gap-2">
-          <Label htmlFor="edit-paymentMethod">Payment Method</Label>
-          <Input
-            id="edit-paymentMethod"
-            name="paymentMethod"
-            defaultValue={currentOrder.paymentMethod}
-            required
-          />
-        </div>
-      </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="grid gap-2">
+                    <Label htmlFor="edit-numberOfItems">Number of Items</Label>
+                    <Input
+                      id="edit-numberOfItems"
+                      name="numberOfItems"
+                      type="number"
+                      min="1"
+                      defaultValue={currentOrder.numberOfItems}
+                      required
+                    />
+                  </div>
+                  <div className="grid gap-2">
+                    <Label htmlFor="edit-paymentMethod">Payment Method</Label>
+                    <Input
+                      id="edit-paymentMethod"
+                      name="paymentMethod"
+                      defaultValue={currentOrder.paymentMethod}
+                      required
+                    />
+                  </div>
+                </div>
 
-      <div className="grid grid-cols-2 gap-4">
-        <div className="grid gap-2">
-          <Label htmlFor="edit-subtotal">Subtotal ($)</Label>
-          <Input
-            id="edit-subtotal"
-            name="subtotal"
-            type="number"
-            step="0.01"
-            min="0"
-            defaultValue={currentOrder.subtotal}
-            required
-          />
-        </div>
-        <div className="grid gap-2">
-          <Label htmlFor="edit-additionalFee">Additional Fee ($)</Label>
-          <Input
-            id="edit-additionalFee"
-            name="additionalFee"
-            type="number"
-            step="0.01"
-            min="0"
-            defaultValue={currentOrder.additionalFee}
-            required
-          />
-        </div>
-      </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="grid gap-2">
+                    <Label htmlFor="edit-subtotal">Subtotal ($)</Label>
+                    <Input
+                      id="edit-subtotal"
+                      name="subtotal"
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      defaultValue={currentOrder.subtotal}
+                      required
+                    />
+                  </div>
+                  <div className="grid gap-2">
+                    <Label htmlFor="edit-additionalFee">
+                      Additional Fee ($)
+                    </Label>
+                    <Input
+                      id="edit-additionalFee"
+                      name="additionalFee"
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      defaultValue={currentOrder.additionalFee}
+                      required
+                    />
+                  </div>
+                </div>
 
-      <div className="grid grid-cols-2 gap-4">
-        <div className="grid gap-2">
-          <Label htmlFor="edit-shippingHandling">Shipping & Handling ($)</Label>
-          <Input
-            id="edit-shippingHandling"
-            name="shippingHandling"
-            type="number"
-            step="0.01"
-            min="0"
-            defaultValue={currentOrder.shippingHandling}
-            required
-          />
-        </div>
-        <div className="grid gap-2">
-          <Label htmlFor="edit-taxCollected">Tax Collected ($)</Label>
-          <Input
-            id="edit-taxCollected"
-            name="taxCollected"
-            type="number"
-            step="0.01"
-            min="0"
-            defaultValue={currentOrder.taxCollected}
-            required
-          />
-        </div>
-      </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="grid gap-2">
+                    <Label htmlFor="edit-shippingHandling">
+                      Shipping & Handling ($)
+                    </Label>
+                    <Input
+                      id="edit-shippingHandling"
+                      name="shippingHandling"
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      defaultValue={currentOrder.shippingHandling}
+                      required
+                    />
+                  </div>
+                  <div className="grid gap-2">
+                    <Label htmlFor="edit-taxCollected">Tax Collected ($)</Label>
+                    <Input
+                      id="edit-taxCollected"
+                      name="taxCollected"
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      defaultValue={currentOrder.taxCollected}
+                      required
+                    />
+                  </div>
+                </div>
 
-      <div className="grid gap-2">
-        <Label htmlFor="edit-giftCardAmount">Gift Card Amount ($)</Label>
-        <Input
-          id="edit-giftCardAmount"
-          name="giftCardAmount"
-          type="number"
-          step="0.01"
-          min="0"
-          defaultValue={currentOrder.giftCardAmount}
-          required
-        />
-      </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="edit-giftCardAmount">
+                    Gift Card Amount ($)
+                  </Label>
+                  <Input
+                    id="edit-giftCardAmount"
+                    name="giftCardAmount"
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    defaultValue={currentOrder.giftCardAmount}
+                    required
+                  />
+                </div>
 
-      <div className="grid grid-cols-2 gap-4">
-        <div className="grid gap-2">
-          <Label htmlFor="edit-refundType">Refund Type (Optional)</Label>
-          <Input
-            id="edit-refundType"
-            name="refundType"
-            defaultValue={currentOrder.refundType}
-          />
-        </div>
-        <div className="grid gap-2">
-          <Label htmlFor="edit-refundAmount">Refund Amount ($) (Optional)</Label>
-          <Input
-            id="edit-refundAmount"
-            name="refundAmount"
-            type="number"
-            step="0.01"
-            min="0"
-            defaultValue={currentOrder.refundAmount}
-          />
-        </div>
-      </div>
-    </div>
-    <Button type="submit" className="w-full">Update Order</Button>
-  </form>
-)}
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="grid gap-2">
+                    <Label htmlFor="edit-refundType">
+                      Refund Type (Optional)
+                    </Label>
+                    <Input
+                      id="edit-refundType"
+                      name="refundType"
+                      defaultValue={currentOrder.refundType}
+                    />
+                  </div>
+                  <div className="grid gap-2">
+                    <Label htmlFor="edit-refundAmount">
+                      Refund Amount ($) (Optional)
+                    </Label>
+                    <Input
+                      id="edit-refundAmount"
+                      name="refundAmount"
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      defaultValue={currentOrder.refundAmount}
+                    />
+                  </div>
+                </div>
+              </div>
+              <Button type="submit" className="w-full">
+                Update Order
+              </Button>
+            </form>
+          )}
         </DialogContent>
       </Dialog>
     </div>
