@@ -89,23 +89,42 @@ export default function AmazonPayoutTable() {
 
   const handleAddOrder = async (formData: FormData) => {
     try {
-      const orderData = Object.fromEntries(formData.entries())
+      const orderData = {
+        orderNumber: formData.get("orderNumber"),
+        orderDate: formData.get("orderDate"),
+        numberOfItems: Number(formData.get("numberOfItems")),
+        paymentMethod: formData.get("paymentMethod"),
+        subtotal: Number(formData.get("subtotal")),
+        additionalFee: Number(formData.get("additionalFee")),
+        shippingHandling: Number(formData.get("shippingHandling")),
+        taxCollected: Number(formData.get("taxCollected")),
+        giftCardAmount: Number(formData.get("giftCardAmount")),
+        refundType: formData.get("refundType") || undefined,
+        refundAmount: formData.get("refundAmount")
+          ? Number(formData.get("refundAmount"))
+          : undefined,
+      };
+  
       const response = await fetch("/api/amazon-orders/add", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(orderData),
-      })
-
-      if (!response.ok) throw new Error("Failed to add order")
-
-      toast.success("Order added successfully")
-      setIsAddOrderDialogOpen(false)
-      fetchData()
+      });
+  
+      const result = await response.json();
+  
+      if (!response.ok) {
+        throw new Error(result.error || "Failed to add order");
+      }
+  
+      toast.success("Order added successfully");
+      setIsAddOrderDialogOpen(false);
+      fetchData();
     } catch (error) {
-      console.error(error)
-      toast.error("Failed to add order")
+      console.error(error);
+      toast.error(error instanceof Error ? error.message : "Failed to add order");
     }
-  }
+  };
 
   const handleAddPayout = async (formData: FormData) => {
     try {
