@@ -1,27 +1,20 @@
 "use client";
 
 import {
-  BadgeCheck,
-  Bell,
   Bot,
   ChevronRight,
   ChevronsUpDown,
   Command,
-  CreditCard,
   Folder,
   Forward,
-  LogOut,
-  Moon,
   MoreHorizontal,
   PieChart,
   Plus,
   SquareTerminal,
-  Sun,
   Trash2
 } from "lucide-react";
-import React, { useCallback, useEffect, type ReactNode } from "react";
+import React, { type ReactNode } from "react";
 
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   Collapsible,
   CollapsibleContent,
@@ -30,17 +23,15 @@ import {
 import {
   DropdownMenu,
   DropdownMenuContent,
-  DropdownMenuGroup,
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuShortcut,
-  DropdownMenuTrigger,
+  DropdownMenuTrigger
 } from "@/components/ui/dropdown-menu";
 import {
   Sidebar,
   SidebarContent,
-  SidebarFooter,
   SidebarGroup,
   SidebarGroupLabel,
   SidebarHeader,
@@ -53,9 +44,8 @@ import {
   SidebarMenuSubButton,
   SidebarMenuSubItem,
   SidebarProvider,
-  SidebarRail,
+  SidebarRail
 } from "@/components/ui/sidebar";
-import { useTheme } from "next-themes";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
@@ -86,18 +76,24 @@ export default function SidebarPageTemplate({
     ],
     navMain: [
       {
-        title: "Dashboard",
+        title: "Orders",
         url: "#",
         icon: Bot,
         isActive: isPathInItems([
-          { url: "/orders" },
+          { url: "/amazon-orders" },
+          { url: "/ebay-orders" },
           { url: "/payouts" },
         ]),
         items: [
           {
             title: "Orders",
-            url: "/orders",
-            isActive: pathname === "/orders",
+            url: "/amazon-orders",
+            isActive: pathname === "/amazon-orders",
+          },
+          {
+            title: "eBay Orders",
+            url: "/ebay-orders",
+            isActive: pathname === "/ebay-orders",
           },
           {
             title: "Payouts",
@@ -133,19 +129,11 @@ export default function SidebarPageTemplate({
   };
 
   const [activeTeam, setActiveTeam] = React.useState(data.teams[0]);
-  const { theme, setTheme } = useTheme();
-  const [user, setUser] = React.useState({
-    id: 1,
-    username: "Muhammad Husnain",
-    email: "aimahusnain@gmail.com",
-    picture: "https://github.com/shadcn.png",
-    createdAt: new Date(),
-    updatedAt: new Date(),
-  });
+  // const { theme, setTheme } = useTheme();
 
-  const toggleTheme = () => {
-    setTheme(theme === "light" ? "dark" : "light");
-  };
+  // const toggleTheme = () => {
+  //   setTheme(theme === "light" ? "dark" : "light");
+  // };
 
   //   const logoutWithGoogle = async () => {
   //     try {
@@ -154,24 +142,6 @@ export default function SidebarPageTemplate({
   //       console.error("There was an error logging out:", err);
   //     }
   //   };
-  
-  useEffect(() => {
-    fetchUser();
-    const intervalId = setInterval(fetchUser, 10000); // Fetch every 10 seconds
-
-    return () => clearInterval(intervalId); // Cleanup on unmount
-  }, []);
-
-  const fetchUser = useCallback(async () => {
-    const response = await fetch("/api/get-user");
-    const data = await response.json();
-    if (data.success) {
-      setUser(data.data[0]);
-      return data.data[0];
-    } else {
-      throw new Error("Failed to fetch user data");
-    }
-  }, [setUser]);
 
   return (
     <SidebarProvider>
@@ -326,87 +296,6 @@ export default function SidebarPageTemplate({
             </SidebarMenu>
           </SidebarGroup>
         </SidebarContent>
-        <SidebarFooter>
-          <SidebarMenu>
-            <SidebarMenuItem>
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <SidebarMenuButton
-                    size="lg"
-                    className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
-                  >
-                    <Avatar className="h-8 w-8 rounded-lg">
-                      <AvatarImage src={user.picture} alt={user.username} />
-                      <AvatarFallback className="rounded-lg">
-                        {user.username.substring(0, 2).toUpperCase()}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div className="grid flex-1 text-left text-sm leading-tight">
-                      <span className="truncate font-semibold">
-                        {user.username}
-                      </span>
-                      <span className="truncate text-xs">{user.email}</span>
-                    </div>
-                    <ChevronsUpDown className="ml-auto size-4" />
-                  </SidebarMenuButton>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent
-                  className="w-[--radix-dropdown-menu-trigger-width] min-w-56 rounded-lg"
-                  side="bottom"
-                  align="end"
-                  sideOffset={4}
-                >
-                  <DropdownMenuLabel className="p-0 font-normal">
-                    <div className="flex items-center gap-2 px-1 py-1.5 text-left text-sm">
-                      <Avatar className="h-8 w-8 rounded-lg">
-                        <AvatarImage src={user.picture} alt={user.username} />
-                        <AvatarFallback className="rounded-lg">
-                          {user.username.substring(0, 2).toUpperCase()}
-                        </AvatarFallback>
-                      </Avatar>
-                      <div className="grid flex-1 text-left text-sm leading-tight">
-                        <span className="truncate font-semibold">
-                          {user.username}
-                        </span>
-                        <span className="truncate text-xs">{user.email}</span>
-                      </div>
-                    </div>
-                  </DropdownMenuLabel>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuGroup>
-                    <Link href="/account">
-                      <DropdownMenuItem>
-                        <BadgeCheck className="h-4 w-4" />
-                        <span>Account</span>
-                      </DropdownMenuItem>
-                    </Link>
-                    <DropdownMenuItem>
-                      <CreditCard />
-                      Billing
-                    </DropdownMenuItem>
-                    <DropdownMenuItem>
-                      <Bell />
-                      Notifications
-                    </DropdownMenuItem>
-                    <DropdownMenuItem
-                      onClick={toggleTheme}
-                      aria-label="Toggle theme"
-                    >
-                      <Sun className="h-5 w-5 rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
-                      <Moon className="absolute h-5 w-5 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
-                      <span>Toggle Theme</span>
-                    </DropdownMenuItem>
-                  </DropdownMenuGroup>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem>
-                    <LogOut />
-                    Log out
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            </SidebarMenuItem>
-          </SidebarMenu>
-        </SidebarFooter>
         <SidebarRail />
       </Sidebar>
       <SidebarInset>{children}</SidebarInset>

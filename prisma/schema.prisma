@@ -7,32 +7,50 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model Order {
-  id     String   @id @default(auto()) @map("_id") @db.ObjectId
-  date   DateTime
-  amount Float
+model AmazonOrder {
+  id                String    @id @default(auto()) @map("_id") @db.ObjectId
+  orderNumber       String    @unique
+  orderDate         DateTime
+  numberOfItems     Int
+  paymentMethod     String
+  subtotal         Float
+  additionalFee    Float
+  shippingHandling Float
+  taxCollected     Float
+  giftCardAmount   Float
+  orderTotal       Float
+  refundType       String?
+  refundAmount     String?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+}
+
+model EbayOrder {
+  id                String    @id @default(auto()) @map("_id") @db.ObjectId
+  orderNumber       String    @unique
+  orderDate         DateTime
+  orderQuantity     Int
+  itemSubtotal      Float
+  shippingHandling  Float
+  taxCollected      Float
+  transactionFee    Float
+  adFees            Float
+  netAmount         Float
+  payoutAmount      Float
+  feeDeduction      Float
+  payoutFlatFee     Float
+  balance           Float
+  payoutMethod     String
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
 }
 
 model Payout {
-  id              String   @id @default(auto()) @map("_id") @db.ObjectId
-  date            DateTime
-  initialBalance  Float
-  payout          Float
-  withdrawals     Float
-}
-
-model Configuration {
-  id         String @id @default(auto()) @map("_id") @db.ObjectId
-  commission Float
-}
-
-model User {
-  id        String   @id @default(auto()) @map("_id") @db.ObjectId
-  username  String   @unique
-  email     String   @unique
-  picture   String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@map("users")
+  id           String        @id @default(auto()) @map("_id") @db.ObjectId
+  date         DateTime
+  amount       Float
+  method       String
+  description  String?
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
 }
