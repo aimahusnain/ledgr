@@ -125,7 +125,7 @@ const AmazonOrderTable = () => {
         refundAmount: formData.get("refundAmount") ? Number(formData.get("refundAmount")) : undefined,
       };
 
-      const response = await fetch(`/api/amazon-orders/${currentOrder.id}`, {
+      const response = await fetch(`/api/amazon-orders/update/${currentOrder.id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(orderData),
@@ -146,7 +146,7 @@ const AmazonOrderTable = () => {
     if (!confirm("Are you sure you want to delete this order?")) return;
 
     try {
-      const response = await fetch(`/api/amazon-orders/${id}`, {
+      const response = await fetch(`/api/amazon-orders/delete/${id}`, {
         method: "DELETE",
       });
 
