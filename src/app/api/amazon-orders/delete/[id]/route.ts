@@ -2,13 +2,15 @@ import { db } from "@/lib/db";
 import { NextResponse } from "next/server";
 
 export async function DELETE(
-  // req: Request,
+  req: Request,
   { params }: { params: { id: string } }
 ) {
   try {
     if (!params.id) {
       return NextResponse.json({ error: "Order ID is required" }, { status: 400 });
     }
+
+    console.log(req)
 
     await db.amazonOrder.delete({
       where: { id: params.id },
