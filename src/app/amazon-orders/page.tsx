@@ -1,13 +1,14 @@
-"use client";
+"use client"
 
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { useState, useEffect } from "react"
+import { format } from "date-fns"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { Label } from "@/components/ui/label"
+import { Loader2, Plus, RefreshCcw, Search, Edit, Trash2, MoreHorizontal } from "lucide-react"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -15,451 +16,417 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import { format } from "date-fns";
-import {
-  Edit,
-  Loader2,
-  MoreHorizontal,
-  Plus,
-  RefreshCcw,
-  Search,
-  Trash2,
-} from "lucide-react";
-import { useEffect, useState } from "react";
-import { toast } from "sonner";
+} from "@/components/ui/dropdown-menu"
+import { toast } from "sonner"
 
 type AmazonOrder = {
-  id: string;
-  orderNumber: string;
-  orderDate: string;
-  numberOfItems: number;
-  paymentMethod: string;
-  subtotal: number;
-  additionalFee: number;
-  shippingHandling: number;
-  taxCollected: number;
-  giftCardAmount: number;
-  orderTotal: number;
-  refundType?: string;
-  refundAmount?: number;
-};
+  id: string
+  orderNumber: string
+  orderDate: string
+  numberOfItems: number
+  paymentMethod: string
+  subtotal: number
+  additionalFee: number
+  shippingHandling: number
+  taxCollected: number
+  giftCardAmount: number
+  orderTotal: number
+  refundType?: string
+  refundAmount?: number
+}
 
-const AmazonOrderTable = () => {
-  const [orders, setOrders] = useState<AmazonOrder[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
-  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
-  const [currentOrder, setCurrentOrder] = useState<AmazonOrder | null>(null);
-  const [searchTerm, setSearchTerm] = useState("");
+type Payout = {
+  id: string
+  date: string
+  amount: number
+  method: string
+  description?: string
+}
 
-  const fetchOrders = async () => {
-    setLoading(true);
+type CombinedEntry = AmazonOrder | Payout
+
+export default function AmazonPayoutTable() {
+  const [entries, setEntries] = useState<CombinedEntry[]>([])
+  const [loading, setLoading] = useState(true)
+  const [searchTerm, setSearchTerm] = useState("")
+  const [isAddOrderDialogOpen, setIsAddOrderDialogOpen] = useState(false)
+  const [isAddPayoutDialogOpen, setIsAddPayoutDialogOpen] = useState(false)
+  const [isEditOrderDialogOpen, setIsEditOrderDialogOpen] = useState(false)
+  const [isEditPayoutDialogOpen, setIsEditPayoutDialogOpen] = useState(false)
+  const [currentOrder, setCurrentOrder] = useState<AmazonOrder | null>(null)
+  const [currentPayout, setCurrentPayout] = useState<Payout | null>(null)
+
+  const fetchData = async () => {
+    setLoading(true)
     try {
-      const response = await fetch("/api/amazon-orders");
-      if (!response.ok) throw new Error("Failed to fetch orders");
-      const data = await response.json();
-      setOrders(data);
+      const [ordersResponse, payoutsResponse] = await Promise.all([fetch("/api/amazon-orders"), fetch("/api/payouts")])
+
+      if (!ordersResponse.ok || !payoutsResponse.ok) {
+        throw new Error("Failed to fetch data")
+      }
+
+      const orders: AmazonOrder[] = await ordersResponse.json()
+      const payouts: Payout[] = await payoutsResponse.json()
+
+      const combinedEntries: CombinedEntry[] = [...orders, ...payouts].sort(
+        (a, b) =>
+          new Date("date" in b ? b.date : b.orderDate).getTime() -
+          new Date("date" in a ? a.date : a.orderDate).getTime(),
+      )
+
+      setEntries(combinedEntries)
     } catch (error) {
-      console.log(error);
-      toast.error("Failed to fetch orders");
+      console.error(error)
+      toast.error("Failed to fetch data")
     } finally {
-      setLoading(false);
+      setLoading(false)
     }
-  };
+  }
 
   useEffect(() => {
-    fetchOrders();
-  }, []);
+    fetchData()
+  }, [])
 
   const handleAddOrder = async (formData: FormData) => {
     try {
-      const orderData = {
-        orderNumber: formData.get("orderNumber"),
-        orderDate: formData.get("orderDate"),
-        numberOfItems: Number(formData.get("numberOfItems")),
-        paymentMethod: formData.get("paymentMethod"),
-        subtotal: Number(formData.get("subtotal")),
-        additionalFee: Number(formData.get("additionalFee")),
-        shippingHandling: Number(formData.get("shippingHandling")),
-        taxCollected: Number(formData.get("taxCollected")),
-        giftCardAmount: Number(formData.get("giftCardAmount")),
-        refundType: formData.get("refundType") || undefined,
-        refundAmount: formData.get("refundAmount")
-          ? Number(formData.get("refundAmount"))
-          : undefined,
-      };
-
+      const orderData = Object.fromEntries(formData.entries())
       const response = await fetch("/api/amazon-orders/add", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(orderData),
-      });
+      })
 
-      if (!response.ok) throw new Error("Failed to add order");
+      if (!response.ok) throw new Error("Failed to add order")
 
-      toast.success("Order added successfully");
-      setIsAddDialogOpen(false);
-      fetchOrders();
+      toast.success("Order added successfully")
+      setIsAddOrderDialogOpen(false)
+      fetchData()
     } catch (error) {
-      console.log(error);
-      toast.error("Failed to add order");
+      console.error(error)
+      toast.error("Failed to add order")
     }
-  };
+  }
 
-  const handleAddDialogChange = (open: boolean) => {
-    setIsAddDialogOpen(open);
-    if (!open) {
-      // Reset form if needed
-      const form = document.querySelector('form');
-      if (form) form.reset();
+  const handleAddPayout = async (formData: FormData) => {
+    try {
+      const payoutData = Object.fromEntries(formData.entries())
+      const response = await fetch("/api/payouts", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payoutData),
+      })
+
+      if (!response.ok) throw new Error("Failed to add payout")
+
+      toast.success("Payout added successfully")
+      setIsAddPayoutDialogOpen(false)
+      fetchData()
+    } catch (error) {
+      console.error(error)
+      toast.error("Failed to add payout")
     }
-  };
-  
+  }
 
   const handleUpdateOrder = async (formData: FormData) => {
-    if (!currentOrder) return;
+    if (!currentOrder) return
 
     try {
-      const orderData = {
-        orderNumber: formData.get("orderNumber"),
-        orderDate: formData.get("orderDate"),
-        numberOfItems: Number(formData.get("numberOfItems")),
-        paymentMethod: formData.get("paymentMethod"),
-        subtotal: Number(formData.get("subtotal")),
-        additionalFee: Number(formData.get("additionalFee")),
-        shippingHandling: Number(formData.get("shippingHandling")),
-        taxCollected: Number(formData.get("taxCollected")),
-        giftCardAmount: Number(formData.get("giftCardAmount")),
-        refundType: formData.get("refundType") || undefined,
-        refundAmount: formData.get("refundAmount")
-          ? Number(formData.get("refundAmount"))
-          : undefined,
-      };
+      const orderData = Object.fromEntries(formData.entries())
+      const response = await fetch(`/api/amazon-orders/${currentOrder.id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(orderData),
+      })
 
-      const response = await fetch(
-        `/api/amazon-orders/${currentOrder.id}`,
-        {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(orderData),
-        }
-      );
+      if (!response.ok) throw new Error("Failed to update order")
 
-      if (!response.ok) throw new Error("Failed to update order");
-
-      toast.success("Order updated successfully");
-      setIsEditDialogOpen(false);
-      fetchOrders();
+      toast.success("Order updated successfully")
+      setIsEditOrderDialogOpen(false)
+      fetchData()
     } catch (error) {
-      console.log(error);
-      toast.error("Failed to update order");
+      console.error(error)
+      toast.error("Failed to update order")
     }
-  };
+  }
 
-  const handleDeleteOrder = async (id: string) => {
-    if (!confirm("Are you sure you want to delete this order?")) return;
+  const handleUpdatePayout = async (formData: FormData) => {
+    if (!currentPayout) return
 
     try {
-      const response = await fetch(`/api/amazon-orders/${id}`, {
+      const payoutData = Object.fromEntries(formData.entries())
+      const response = await fetch(`/api/payouts/${currentPayout.id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payoutData),
+      })
+
+      if (!response.ok) throw new Error("Failed to update payout")
+
+      toast.success("Payout updated successfully")
+      setIsEditPayoutDialogOpen(false)
+      fetchData()
+    } catch (error) {
+      console.error(error)
+      toast.error("Failed to update payout")
+    }
+  }
+
+  const handleDelete = async (id: string, type: "order" | "payout") => {
+    if (!confirm(`Are you sure you want to delete this ${type}?`)) return
+
+    try {
+      const response = await fetch(`/api/${type === "order" ? "amazon-orders" : "payouts"}/${id}`, {
         method: "DELETE",
-      });
+      })
 
-      if (!response.ok) throw new Error("Failed to delete order");
+      if (!response.ok) throw new Error(`Failed to delete ${type}`)
 
-      toast.success("Order deleted successfully");
-      fetchOrders();
+      toast.success(`${type.charAt(0).toUpperCase() + type.slice(1)} deleted successfully`)
+      fetchData()
     } catch (error) {
-      console.log(error);
-      toast.error("Failed to delete order");
+      console.error(error)
+      toast.error(`Failed to delete ${type}`)
     }
-  };
+  }
 
-  const filteredOrders = orders.filter((order) =>
-    order.orderNumber.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredEntries = entries.filter((entry) => {
+    const searchLower = searchTerm.toLowerCase()
+    if ("orderNumber" in entry) {
+      return (
+        entry.orderNumber.toLowerCase().includes(searchLower) || entry.paymentMethod.toLowerCase().includes(searchLower)
+      )
+    } else {
+      return entry.method.toLowerCase().includes(searchLower) || entry.description?.toLowerCase().includes(searchLower)
+    }
+  })
 
   return (
-    <div className="space-y-8">
-      <Card className="p-6">
-        <CardHeader className="px-0 pt-0">
-          <div className="flex justify-between items-center">
-            <CardTitle className="text-2xl font-bold">Amazon Orders</CardTitle>
-            <div className="flex items-center gap-4">
-              <div className="relative w-64">
-                <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-                <Input
-                  placeholder="Search orders..."
-                  className="pl-8"
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                />
-              </div>
-              <Button onClick={() => setIsAddDialogOpen(true)} className="dark:text-black">
-                <Plus className="mr-2 h-4 w-4" /> Add Order
-              </Button>
-              <Button variant="outline" onClick={fetchOrders}>
-                <RefreshCcw className="h-4 w-4" />
-              </Button>
+    <Card className="w-full">
+      <CardHeader>
+        <div className="flex justify-between items-center">
+          <CardTitle>Amazon Orders and Payouts</CardTitle>
+          <div className="flex items-center gap-4">
+            <div className="relative w-64">
+              <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Search orders..."
+                className="pl-8"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
             </div>
+            <Button onClick={() => setIsAddOrderDialogOpen(true)}>
+              <Plus className="mr-2 h-4 w-4" /> Add Order
+            </Button>
+            <Button onClick={() => setIsAddPayoutDialogOpen(true)} variant="secondary">
+              <Plus className="mr-2 h-4 w-4" /> Add Payout
+            </Button>
+            <Button variant="outline" onClick={fetchData}>
+              <RefreshCcw className="h-4 w-4" />
+            </Button>
           </div>
-        </CardHeader>
+        </div>
+      </CardHeader>
 
-        <CardContent className="p-0">
-          {loading ? (
-            <div className="flex justify-center items-center h-64">
-              <Loader2 className="h-8 w-8 animate-spin" />
-            </div>
-          ) : (
-            <div className="rounded-md border w-screen container">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Order Number</TableHead>
-                    <TableHead>Date</TableHead>
-                    <TableHead>Items</TableHead>
-                    <TableHead>Payment Method</TableHead>
-                    <TableHead>Subtotal</TableHead>
-                    <TableHead>Additional Fee</TableHead>
-                    <TableHead>Shipping/Handling</TableHead>
-                    <TableHead>Tax Collected</TableHead>
-                    <TableHead>Gift Card</TableHead>
-                    <TableHead>Order Total</TableHead>
-                    <TableHead>Refund Amount</TableHead>
-                    <TableHead>Refund Type</TableHead>
-                    <TableHead className="text-right">Total</TableHead>
-                    <TableHead></TableHead>
+      <CardContent>
+        {loading ? (
+          <div className="flex justify-center items-center h-64">
+            <Loader2 className="h-8 w-8 animate-spin" />
+          </div>
+        ) : (
+          <div className="rounded-md border">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Date</TableHead>
+                  <TableHead>Type</TableHead>
+                  <TableHead>Details</TableHead>
+                  <TableHead>Amount</TableHead>
+                  <TableHead className="text-right">Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {filteredEntries.map((entry) => (
+                  <TableRow
+                    key={entry.id}
+                    className={
+                      "orderNumber" in entry
+                        ? "bg-background hover:bg-muted/50"
+                        : "bg-green-50 dark:bg-green-900/20 hover:bg-green-100 dark:hover:bg-green-900/30"
+                    }
+                  >
+                    <TableCell>
+                      {format(new Date("orderDate" in entry ? entry.orderDate : entry.date), "dd MMM yyyy")}
+                    </TableCell>
+                    <TableCell>{"orderNumber" in entry ? "Order" : "Payout"}</TableCell>
+                    <TableCell>
+                      {"orderNumber" in entry ? <>Order #: {entry.orderNumber}</> : <>Method: {entry.method}</>}
+                    </TableCell>
+                    <TableCell>
+                      {"orderTotal" in entry ? `$${entry.orderTotal.toFixed(2)}` : `$${entry.amount.toFixed(2)}`}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" className="h-8 w-8 p-0">
+                            <MoreHorizontal className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                          <DropdownMenuItem
+                            onClick={() => {
+                              if ("orderNumber" in entry) {
+                                setCurrentOrder(entry)
+                                setIsEditOrderDialogOpen(true)
+                              } else {
+                                setCurrentPayout(entry)
+                                setIsEditPayoutDialogOpen(true)
+                              }
+                            }}
+                          >
+                            <Edit className="mr-2 h-4 w-4" /> Edit
+                          </DropdownMenuItem>
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem
+                            onClick={() => handleDelete(entry.id, "orderNumber" in entry ? "order" : "payout")}
+                            className="text-red-600"
+                          >
+                            <Trash2 className="mr-2 h-4 w-4" /> Delete
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </TableCell>
                   </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredOrders.map((order) => (
-                    <TableRow key={order.id}>
-                      <TableCell className="font-medium">
-                        {order.orderNumber}
-                      </TableCell>
-                      <TableCell>
-                        {format(new Date(order.orderDate), "dd MMM yyyy")}
-                      </TableCell>
-                      <TableCell>{order.numberOfItems}</TableCell>
-                      <TableCell>{order.paymentMethod}</TableCell>
-                      <TableCell>{order.subtotal}</TableCell>
-                      <TableCell>{order.additionalFee}</TableCell>
-                      <TableCell>{order.shippingHandling}</TableCell>
-                      <TableCell>{order.taxCollected}</TableCell>
-                      <TableCell>{order.giftCardAmount}</TableCell>
-                      <TableCell>{order.orderTotal}</TableCell>
-                      <TableCell>{order.refundAmount}</TableCell>
-                      <TableCell>{order.refundType}</TableCell>
-                      <TableCell className="text-right">
-                        ${order.orderTotal.toFixed(2)}
-                      </TableCell>
-                      <TableCell>
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" className="h-8 w-8 p-0">
-                              <MoreHorizontal className="h-4 w-4" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                            <DropdownMenuItem
-                              onClick={() => {
-                                setCurrentOrder(order);
-                                setIsEditDialogOpen(true);
-                              }}
-                            >
-                              <Edit className="mr-2 h-4 w-4" /> Edit
-                            </DropdownMenuItem>
-                            <DropdownMenuSeparator />
-                            <DropdownMenuItem
-                              onClick={() => handleDeleteOrder(order.id)}
-                              className="text-red-600"
-                            >
-                              <Trash2 className="mr-2 h-4 w-4" /> Delete
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
-          )}
-        </CardContent>
-      </Card>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+        )}
+      </CardContent>
 
       {/* Add Order Dialog */}
-      <Dialog open={isAddDialogOpen} onOpenChange={handleAddDialogChange}>
-
-<DialogContent className="sm:max-w-[600px]">
+      <Dialog open={isAddOrderDialogOpen} onOpenChange={setIsAddOrderDialogOpen}>
+        <DialogContent className="sm:max-w-[600px]">
           <DialogHeader>
             <DialogTitle>Add New Order</DialogTitle>
           </DialogHeader>
           <form
             onSubmit={(e) => {
-              e.preventDefault();
-              handleAddOrder(new FormData(e.currentTarget));
+              e.preventDefault()
+              handleAddOrder(new FormData(e.currentTarget))
             }}
           >
             <div className="grid gap-6 py-4">
               <div className="grid grid-cols-2 gap-4">
                 <div className="grid gap-2">
                   <Label htmlFor="orderNumber">Order Number</Label>
-                  <Input
-                    id="orderNumber"
-                    name="orderNumber"
-                    placeholder="Enter order number"
-                    required
-                  />
+                  <Input id="orderNumber" name="orderNumber" required />
                 </div>
                 <div className="grid gap-2">
                   <Label htmlFor="orderDate">Order Date</Label>
-                  <Input
-                    id="orderDate"
-                    name="orderDate"
-                    type="date"
-                    defaultValue={new Date().toISOString().split("T")[0]}
-                    required
-                  />
+                  <Input id="orderDate" name="orderDate" type="date" required />
                 </div>
               </div>
-
               <div className="grid grid-cols-2 gap-4">
                 <div className="grid gap-2">
                   <Label htmlFor="numberOfItems">Number of Items</Label>
-                  <Input
-                    id="numberOfItems"
-                    name="numberOfItems"
-                    type="number"
-                    min="1"
-                    defaultValue="1"
-                    required
-                  />
+                  <Input id="numberOfItems" name="numberOfItems" type="number" min="1" required />
                 </div>
                 <div className="grid gap-2">
                   <Label htmlFor="paymentMethod">Payment Method</Label>
-                  <Input
-                    id="paymentMethod"
-                    name="paymentMethod"
-                    placeholder="Enter payment method"
-                    required
-                  />
+                  <Input id="paymentMethod" name="paymentMethod" required />
                 </div>
               </div>
-
               <div className="grid grid-cols-2 gap-4">
                 <div className="grid gap-2">
                   <Label htmlFor="subtotal">Subtotal ($)</Label>
-                  <Input
-                    id="subtotal"
-                    name="subtotal"
-                    type="number"
-                    step="0.01"
-                    min="0"
-                    placeholder="0.00"
-                    required
-                  />
+                  <Input id="subtotal" name="subtotal" type="number" step="0.01" min="0" required />
                 </div>
                 <div className="grid gap-2">
                   <Label htmlFor="additionalFee">Additional Fee ($)</Label>
-                  <Input
-                    id="additionalFee"
-                    name="additionalFee"
-                    type="number"
-                    step="0.01"
-                    min="0"
-                    defaultValue="0"
-                    required
-                  />
+                  <Input id="additionalFee" name="additionalFee" type="number" step="0.01" min="0" required />
                 </div>
               </div>
-
               <div className="grid grid-cols-2 gap-4">
                 <div className="grid gap-2">
-                  <Label htmlFor="shippingHandling">
-                    Shipping & Handling ($)
-                  </Label>
-                  <Input
-                    id="shippingHandling"
-                    name="shippingHandling"
-                    type="number"
-                    step="0.01"
-                    min="0"
-                    defaultValue="0"
-                    required
-                  />
+                  <Label htmlFor="shippingHandling">Shipping & Handling ($)</Label>
+                  <Input id="shippingHandling" name="shippingHandling" type="number" step="0.01" min="0" required />
                 </div>
                 <div className="grid gap-2">
                   <Label htmlFor="taxCollected">Tax Collected ($)</Label>
-                  <Input
-                    id="taxCollected"
-                    name="taxCollected"
-                    type="number"
-                    step="0.01"
-                    min="0"
-                    defaultValue="0"
-                    required
-                  />
+                  <Input id="taxCollected" name="taxCollected" type="number" step="0.01" min="0" required />
                 </div>
               </div>
-
               <div className="grid gap-2">
                 <Label htmlFor="giftCardAmount">Gift Card Amount ($)</Label>
-                <Input
-                  id="giftCardAmount"
-                  name="giftCardAmount"
-                  type="number"
-                  step="0.01"
-                  min="0"
-                  defaultValue="0"
-                  required
-                />
+                <Input id="giftCardAmount" name="giftCardAmount" type="number" step="0.01" min="0" required />
               </div>
-
               <div className="grid grid-cols-2 gap-4">
                 <div className="grid gap-2">
                   <Label htmlFor="refundType">Refund Type (Optional)</Label>
-                  <Input
-                    id="refundType"
-                    name="refundType"
-                    placeholder="Enter refund type"
-                  />
+                  <Input id="refundType" name="refundType" />
                 </div>
                 <div className="grid gap-2">
-                  <Label htmlFor="refundAmount">
-                    Refund Amount ($) (Optional)
-                  </Label>
-                  <Input
-                    id="refundAmount"
-                    name="refundAmount"
-                    type="number"
-                    step="0.01"
-                    min="0"
-                    placeholder="0.00"
-                  />
+                  <Label htmlFor="refundAmount">Refund Amount ($) (Optional)</Label>
+                  <Input id="refundAmount" name="refundAmount" type="number" step="0.01" min="0" />
                 </div>
               </div>
             </div>
-            <Button type="submit" className="w-full dark:text-black">
+            <Button type="submit" className="w-full">
               Add Order
             </Button>
           </form>
         </DialogContent>
       </Dialog>
 
+      {/* Add Payout Dialog */}
+      <Dialog open={isAddPayoutDialogOpen} onOpenChange={setIsAddPayoutDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Add New Payout</DialogTitle>
+          </DialogHeader>
+          <form
+            onSubmit={(e) => {
+              e.preventDefault()
+              handleAddPayout(new FormData(e.currentTarget))
+            }}
+          >
+            <div className="grid gap-4 py-4">
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="date" className="text-right">
+                  Date
+                </Label>
+                <Input id="date" name="date" type="date" className="col-span-3" required />
+              </div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="amount" className="text-right">
+                  Amount
+                </Label>
+                <Input id="amount" name="amount" type="number" step="0.01" className="col-span-3" required />
+              </div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="method" className="text-right">
+                  Method
+                </Label>
+                <Input id="method" name="method" className="col-span-3" required />
+              </div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="description" className="text-right">
+                  Description
+                </Label>
+                <Input id="description" name="description" className="col-span-3" />
+              </div>
+            </div>
+            <Button type="submit" className="w-full">
+              Add Payout
+            </Button>
+          </form>
+        </DialogContent>
+      </Dialog>
+
       {/* Edit Order Dialog */}
-      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+      <Dialog open={isEditOrderDialogOpen} onOpenChange={setIsEditOrderDialogOpen}>
         <DialogContent className="sm:max-w-[600px]">
           <DialogHeader>
             <DialogTitle>Edit Order</DialogTitle>
@@ -467,20 +434,15 @@ const AmazonOrderTable = () => {
           {currentOrder && (
             <form
               onSubmit={(e) => {
-                e.preventDefault();
-                handleUpdateOrder(new FormData(e.currentTarget));
+                e.preventDefault()
+                handleUpdateOrder(new FormData(e.currentTarget))
               }}
             >
               <div className="grid gap-6 py-4">
                 <div className="grid grid-cols-2 gap-4">
                   <div className="grid gap-2">
                     <Label htmlFor="edit-orderNumber">Order Number</Label>
-                    <Input
-                      id="edit-orderNumber"
-                      name="orderNumber"
-                      defaultValue={currentOrder.orderNumber}
-                      required
-                    />
+                    <Input id="edit-orderNumber" name="orderNumber" defaultValue={currentOrder.orderNumber} required />
                   </div>
                   <div className="grid gap-2">
                     <Label htmlFor="edit-orderDate">Order Date</Label>
@@ -488,15 +450,11 @@ const AmazonOrderTable = () => {
                       id="edit-orderDate"
                       name="orderDate"
                       type="date"
-                      defaultValue={format(
-                        new Date(currentOrder.orderDate),
-                        "yyyy-MM-dd"
-                      )}
+                      defaultValue={format(new Date(currentOrder.orderDate), "yyyy-MM-dd")}
                       required
                     />
                   </div>
                 </div>
-
                 <div className="grid grid-cols-2 gap-4">
                   <div className="grid gap-2">
                     <Label htmlFor="edit-numberOfItems">Number of Items</Label>
@@ -519,7 +477,6 @@ const AmazonOrderTable = () => {
                     />
                   </div>
                 </div>
-
                 <div className="grid grid-cols-2 gap-4">
                   <div className="grid gap-2">
                     <Label htmlFor="edit-subtotal">Subtotal ($)</Label>
@@ -534,9 +491,7 @@ const AmazonOrderTable = () => {
                     />
                   </div>
                   <div className="grid gap-2">
-                    <Label htmlFor="edit-additionalFee">
-                      Additional Fee ($)
-                    </Label>
+                    <Label htmlFor="edit-additionalFee">Additional Fee ($)</Label>
                     <Input
                       id="edit-additionalFee"
                       name="additionalFee"
@@ -548,12 +503,9 @@ const AmazonOrderTable = () => {
                     />
                   </div>
                 </div>
-
                 <div className="grid grid-cols-2 gap-4">
                   <div className="grid gap-2">
-                    <Label htmlFor="edit-shippingHandling">
-                      Shipping & Handling ($)
-                    </Label>
+                    <Label htmlFor="edit-shippingHandling">Shipping & Handling ($)</Label>
                     <Input
                       id="edit-shippingHandling"
                       name="shippingHandling"
@@ -577,11 +529,8 @@ const AmazonOrderTable = () => {
                     />
                   </div>
                 </div>
-
                 <div className="grid gap-2">
-                  <Label htmlFor="edit-giftCardAmount">
-                    Gift Card Amount ($)
-                  </Label>
+                  <Label htmlFor="edit-giftCardAmount">Gift Card Amount ($)</Label>
                   <Input
                     id="edit-giftCardAmount"
                     name="giftCardAmount"
@@ -592,22 +541,13 @@ const AmazonOrderTable = () => {
                     required
                   />
                 </div>
-
                 <div className="grid grid-cols-2 gap-4">
                   <div className="grid gap-2">
-                    <Label htmlFor="edit-refundType">
-                      Refund Type (Optional)
-                    </Label>
-                    <Input
-                      id="edit-refundType"
-                      name="refundType"
-                      defaultValue={currentOrder.refundType}
-                    />
+                    <Label htmlFor="edit-refundType">Refund Type (Optional)</Label>
+                    <Input id="edit-refundType" name="refundType" defaultValue={currentOrder.refundType} />
                   </div>
                   <div className="grid gap-2">
-                    <Label htmlFor="edit-refundAmount">
-                      Refund Amount ($) (Optional)
-                    </Label>
+                    <Label htmlFor="edit-refundAmount">Refund Amount ($) (Optional)</Label>
                     <Input
                       id="edit-refundAmount"
                       name="refundAmount"
@@ -626,8 +566,79 @@ const AmazonOrderTable = () => {
           )}
         </DialogContent>
       </Dialog>
-    </div>
-  );
-};
 
-export default AmazonOrderTable;
+      {/* Edit Payout Dialog */}
+      <Dialog open={isEditPayoutDialogOpen} onOpenChange={setIsEditPayoutDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Edit Payout</DialogTitle>
+          </DialogHeader>
+          {currentPayout && (
+            <form
+              onSubmit={(e) => {
+                e.preventDefault()
+                handleUpdatePayout(new FormData(e.currentTarget))
+              }}
+            >
+              <div className="grid gap-4 py-4">
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <Label htmlFor="edit-date" className="text-right">
+                    Date
+                  </Label>
+                  <Input
+                    id="edit-date"
+                    name="date"
+                    type="date"
+                    className="col-span-3"
+                    defaultValue={format(new Date(currentPayout.date), "yyyy-MM-dd")}
+                    required
+                  />
+                </div>
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <Label htmlFor="edit-amount" className="text-right">
+                    Amount
+                  </Label>
+                  <Input
+                    id="edit-amount"
+                    name="amount"
+                    type="number"
+                    step="0.01"
+                    className="col-span-3"
+                    defaultValue={currentPayout.amount}
+                    required
+                  />
+                </div>
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <Label htmlFor="edit-method" className="text-right">
+                    Method
+                  </Label>
+                  <Input
+                    id="edit-method"
+                    name="method"
+                    className="col-span-3"
+                    defaultValue={currentPayout.method}
+                    required
+                  />
+                </div>
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <Label htmlFor="edit-description" className="text-right">
+                    Description
+                  </Label>
+                  <Input
+                    id="edit-description"
+                    name="description"
+                    className="col-span-3"
+                    defaultValue={currentPayout.description}
+                  />
+                </div>
+              </div>
+              <Button type="submit" className="w-full">
+                Update Payout
+              </Button>
+            </form>
+          )}
+        </DialogContent>
+      </Dialog>
+    </Card>
+  )
+}
